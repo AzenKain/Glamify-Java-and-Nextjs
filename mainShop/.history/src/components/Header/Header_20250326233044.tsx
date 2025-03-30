@@ -1,0 +1,118 @@
+"use client";
+import { AddDataCart } from "@/app/redux/features/cart/cart.redux";
+import { UpdateUser } from "@/app/redux/features/user/user.redux";
+import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
+import { getCartDetailApi, getUserDetailApi, makeRequestApi } from "@/lib/api";
+import { CartType } from "@/types/cart";
+import { UserType } from "@/types/user";
+import { signOut, useSession } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import { useEffect } from "react";
+
+export const HeaderComponent = () => {
+    const { data: session } = useSession()
+    const dataUser = useAppSelector((state) => state.UserRedux.value)
+    const dataCart = useAppSelector((state) => state.CartRedux.value)
+    const dispatch = useAppDispatch()
+    const router = useRouter()
+
+    useEffect(() => {
+        const fetchData = async () => {
+            let dataUser: UserType = await makeRequestApi(getUserDetailApi, null, session?.refresh_token, session?.access_token)
+            dispatch(UpdateUser(dataUser))
+            let dataCart: CartType = await makeRequestApi(getCartDetailApi, null, session?.refresh_token, session?.access_token)
+            dispatch(AddDataCart(dataCart))
+        }
+        if (session?.userId && session?.refresh_token && session?.access_token) {
+            fetchData();
+        }
+    }, [dispatch, session])
+    
+    const handleRedirect = (to: string) => {
+        router.push(to);
+    }
+
+    const handleSignOut = async () => {
+        router.push('#')
+        await signOut();
+    }
+
+    return (
+        <div className="navbar fixed top-0 z-[99] bg-slate-100">
+            <div className="navbar-start">
+                <div className="dropdown">
+                    <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                    </div>
+                    <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                        <li>
+                            <Link
+                                href={{
+                                    pathname: '/search',
+                                    query: { tags: ['women',] },
+                                }}>
+                                WOMEN
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href={{
+                                    pathname: '/search',
+                                    query: { tags: ['men'] },
+                                }}>
+                                MEN
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href={{
+                                    pathname: '/search',
+                                    query: { category: ['Accessories'] },
+                                }}>
+                                ACCESSORIES
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+                <Link href={"/"} className="btn btn-ghost text-xl">GLAMIFY</Link>
+            </div>
+            <div className="navbar-center hidden lg:flex">
+                <ul className="menu menu-horizontal px-1">
+                    <li>
+                        <Link
+                            href={{
+                                pathname: '/search',
+                                query: { tags: ['women'] },
+                            }}>
+                            WOMEN
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            href={{
+                                pathname: '/search',
+                                query: { tags: ['men'] },
+                            }}>
+                            MEN
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            href={{
+                                pathname: '/search',
+                                query: { category: ['Accessories'] },
+                            }}>
+                            ACCESSORIES
+                        </Link>
+                    </li>
+                </ul>
+            </div>
+            <div className="navbar-end">
+                <button onClick={() => handleRedirect("/search")} className="btn btn-ghost btn-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </button>      
+            </div>
+        </div>
+    );
+}
